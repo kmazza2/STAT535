@@ -36,7 +36,7 @@ fn main() {
     ];
     for i in 0..given_params.len() {
         let mut found: bool = false;
-        for n in 1..=MAX_SAMPLE {
+        'given_param_loop: for n in 1..=MAX_SAMPLE {
             for n1 in 1..=(n - 1) {
                 let n2 = n - n1;
                 for r1 in 0..=n1 {
@@ -66,19 +66,10 @@ fn main() {
                             found = true;
                         }
                         if found {
-                            break;
+                            break 'given_param_loop;
                         }
                     }
-                    if found {
-                        break;
-                    }
                 }
-                if found {
-                    break;
-                }
-            }
-            if found {
-                break;
             }
         }
     }
