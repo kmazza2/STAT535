@@ -54,3 +54,9 @@ fn test_trapezoid_exp() {
         Err(s) => panic!("{}", s)
     };
 }
+
+fn nchoosek(n: usize, k: usize) -> usize {
+    (log_gamma((n + 1) as f64) - log_gamma((k + 1) as f64) - log_gamma((n - k + 1) as f64))
+        .exp()              
+        .round() as usize       
+}         
