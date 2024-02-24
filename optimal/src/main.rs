@@ -1,6 +1,5 @@
 use std::cmp;
 
-
 fn main() {
     const MAX_SAMPLE: usize = 100;
     let given_params: [GivenParam; 2] = [
@@ -72,7 +71,7 @@ fn main() {
         }
     }
     println!("First result: {:?}", optimal_params[0]);
-    println!("First result: {:?}", optimal_params[1]);
+    println!("Second result: {:?}", optimal_params[1]);
 }
 
 struct GivenParam {
@@ -92,14 +91,54 @@ struct OptimalParam {
 }
 
 impl OptimalParam {
-    fn power(&self, given: &GivenParam) -> f64 {
-        unimplemented!()
-    }
     fn size(&self, given: &GivenParam) -> f64 {
-        unimplemented!()
+        let n1 = self.n1;
+        let n2 = self.n2;
+        let r1 = self.r1;
+        let r = self.r;
+        let p0 = given.p0;
+        let mut result: f64 = 0.0;
+        for y1 in (r1 + 1)..=n1 {
+            for y2 in ((r as i32) - (y1 as i32) + 1)..=(n2 as i32) {
+                if y2 >= 0 {
+                    let y2 = y2 as usize;
+                    result += (nchoosek(n1, y1) as f64) * p0.powf(y1 as f64) * (1.0 - p0).powf((n1 - y1) as f64) *
+                        (nchoosek(n2, y2) as f64) * p0.powf(y2 as f64) * (1.0 - p0).powf((n2 - y2) as f64);
+                }
+            }
+        }
+        result
+    }
+    fn power(&self, given: &GivenParam) -> f64 {
+        let n1 = self.n1;
+        let n2 = self.n2;
+        let r1 = self.r1;
+        let r = self.r;
+        let p1 = given.p1;
+        let mut result: f64 = 0.0;
+        for y1 in (r1 + 1)..=n1 {
+            for y2 in ((r as i32) - (y1 as i32) + 1)..=(n2 as i32) {
+                if y2 >= 0 {
+                    let y2 = y2 as usize;
+                    result += (nchoosek(n1, y1) as f64) * p1.powf(y1 as f64) * (1.0 - p1).powf((n1 - y1) as f64) * (nchoosek(n2, y2) as f64) * p1.powf(y2 as f64) * (1.0 - p1).powf((n2 - y2) as f64);
+                }
+            }
+        }
+        result
     }
     fn expectation(&self, given: &GivenParam) -> f64 {
-        unimplemented!()
+        let n1 = self.n1;
+        let n2 = self.n2;
+        let r1 = self.r1;
+        let r = self.r;
+        let p0 = given.p0;
+        let mut factor = 0.0;
+        for y1 in (r1 + 1)..=r {
+            if y1 <= n1 {
+                factor += (nchoosek(n1, y1) as f64) * p0.powf(y1 as f64) * (1.0 - p0).powf((n1 - y1) as f64)
+            }
+        }
+        (n1 as f64) + (n2 as f64) * factor
     }
 }
 
@@ -110,7 +149,8 @@ fn log_gamma(x: f64) -> f64 {
         24.01409824083091,
         -1.231739572450155,
         0.1208650973866179E-2,
-        -0.5395239384953E-5];
+        -0.5395239384953E-5,
+    ];
     const STP: f64 = 2.5066282746310005;
     let mut y = x;
     let tmp = x + 5.5;
@@ -130,4 +170,17 @@ fn test_log_gamma() {
     assert!((log_gamma(100.0) - 359.13420536958).abs() < 0.001);
     assert!((log_gamma(1000.0) - 5905.22042320918).abs() < 0.001);
     assert!((log_gamma(10000.0) - 82099.71749644238).abs() < 0.001);
+}
+
+fn nchoosek(n: usize, k: usize) -> usize {
+    (log_gamma((n + 1) as f64) - log_gamma((k + 1) as f64) - log_gamma((n - k + 1) as f64))
+        .exp()
+        .round() as usize
+}
+
+#[test]
+fn test_nchoosek() {
+    assert_eq!(4845_usize, nchoosek(20, 4));
+    assert!(494705855605882455_f64 - (nchoosek(87, 17) as f64) < 10_000_000_f64);
+    assert_eq!(84_usize, nchoosek(9, 3));
 }
