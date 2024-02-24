@@ -102,8 +102,12 @@ impl OptimalParam {
             for y2 in ((r as i32) - (y1 as i32) + 1)..=(n2 as i32) {
                 if y2 >= 0 {
                     let y2 = y2 as usize;
-                    result += (nchoosek(n1, y1) as f64) * p0.powf(y1 as f64) * (1.0 - p0).powf((n1 - y1) as f64) *
-                        (nchoosek(n2, y2) as f64) * p0.powf(y2 as f64) * (1.0 - p0).powf((n2 - y2) as f64);
+                    result += (nchoosek(n1, y1) as f64)
+                        * p0.powf(y1 as f64)
+                        * (1.0 - p0).powf((n1 - y1) as f64)
+                        * (nchoosek(n2, y2) as f64)
+                        * p0.powf(y2 as f64)
+                        * (1.0 - p0).powf((n2 - y2) as f64);
                 }
             }
         }
@@ -120,7 +124,12 @@ impl OptimalParam {
             for y2 in ((r as i32) - (y1 as i32) + 1)..=(n2 as i32) {
                 if y2 >= 0 {
                     let y2 = y2 as usize;
-                    result += (nchoosek(n1, y1) as f64) * p1.powf(y1 as f64) * (1.0 - p1).powf((n1 - y1) as f64) * (nchoosek(n2, y2) as f64) * p1.powf(y2 as f64) * (1.0 - p1).powf((n2 - y2) as f64);
+                    result += (nchoosek(n1, y1) as f64)
+                        * p1.powf(y1 as f64)
+                        * (1.0 - p1).powf((n1 - y1) as f64)
+                        * (nchoosek(n2, y2) as f64)
+                        * p1.powf(y2 as f64)
+                        * (1.0 - p1).powf((n2 - y2) as f64);
                 }
             }
         }
@@ -135,7 +144,9 @@ impl OptimalParam {
         let mut factor = 0.0;
         for y1 in (r1 + 1)..=r {
             if y1 <= n1 {
-                factor += (nchoosek(n1, y1) as f64) * p0.powf(y1 as f64) * (1.0 - p0).powf((n1 - y1) as f64)
+                factor += (nchoosek(n1, y1) as f64)
+                    * p0.powf(y1 as f64)
+                    * (1.0 - p0).powf((n1 - y1) as f64)
             }
         }
         (n1 as f64) + (n2 as f64) * factor
