@@ -30,3 +30,27 @@ fn trapezoid(f: fn(f64) -> f64, a: f64, b: f64, eps: f64, max_steps: u64) -> Res
         false => Err(String::from("failed to converge"))
     }
 }
+
+#[test]
+fn test_trapezoid_const() {
+    match trapezoid(|_| 1.0, 2.0, 21.0, 1.0E-13_f64, 10000) {
+        Ok(val) => assert!((19.0 - val).abs() < 0.00001),
+        Err(s) => panic!("{}", s)
+    };
+}
+
+#[test]
+fn test_trapezoid_cos() {
+    match trapezoid(|x| x.cos(), 0.35, 11.1, 1.0E-13_f64, 10000) {
+        Ok(val) => assert!((-1.337450395659441 - val).abs() < 0.00001),
+        Err(s) => panic!("{}", s)
+    };
+}
+
+#[test]
+fn test_trapezoid_exp() {
+    match trapezoid(|x| x.exp(), 2.39, 5.28, 1.0E-13_f64, 10000) {
+        Ok(val) => assert!((185.4563803458403 - val).abs() < 0.00001),
+        Err(s) => panic!("{}", s)
+    };
+}
