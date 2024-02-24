@@ -72,3 +72,12 @@ fn nchoosek(n: usize, k: usize) -> usize {
         .exp()              
         .round() as usize       
 }         
+
+fn beta(x1: f64, x2: f64) -> f64 {
+    (log_gamma(x1) + log_gamma(x2) - log_gamma(x1 + x2)).exp()
+}
+
+#[test]
+fn test_beta() {
+    assert!((0.1158881575662717E-3_f64 - beta(5.1_f64, 9.4_f64)).abs() < 1.0E-9_f64);
+}
