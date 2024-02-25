@@ -81,3 +81,28 @@ fn beta(x1: f64, x2: f64) -> f64 {
 fn test_beta() {
     assert!((0.1158881575662717E-3_f64 - beta(5.1_f64, 9.4_f64)).abs() < 1.0E-9_f64);
 }
+
+struct PriorParams {
+    alpha: f64,
+    beta: f64,
+}
+
+struct Data {
+    y: u64,
+    n: u64,
+}
+
+fn beta_dens(x: f64, a: f64, b: f64) -> f64 {
+    x.powf(a - 1.0) * (1.0 - x).powf(b - 1.0) / beta(a, b)
+}
+
+fn post_prob(delta: f64, data1: Data, data2: Data, prior1: PriorParams, prior2: PriorParams) -> f64 {
+    assert!(0.0_f64 < delta && delta < 1.0_f64);
+    let dens1: fn(f64) -> f64 = |x| beta_dens(x, prior1.alpha, prior1.beta);
+    let dens2: fn(f64) -> f64 = |x| beta_dens(x, prior2.alpha, prior2.beta);
+    let inner_integral: fn(f64) -> f64 =
+        |p1| trapezoid(dens2, 0.0_f64, p1 - delta, 1.0E-13_f64, 10_000)
+            .expect("inner integral failed to converge");
+    trapezoid(inner_integral, delta, 1.0_f64, 1.0E-13_f64, 10_000)
+        .expect("posterior probability failed to converge")
+}
