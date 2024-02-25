@@ -2,14 +2,16 @@ fn main() {
     let prior1 = PriorParams{alpha: 0.3, beta: 0.7};
     let prior2 = PriorParams{alpha: 0.3, beta: 0.7};
     let delta = 0.2;
-    println!("{:<7}{:<7}{:7}", "y1", "y2", "post");
-    println!("---------------------");
+    let target = 0.9;
+    println!("{:<7}{:<7}{:8}{:8}", "y1", "y2", "post", "pred");
+    println!("------------------------------");
     for y1 in 5..=15 {
         for y2 in 5..=y1 {
             let data1 = Data {y: y1, N: 50, n: 25};
             let data2 = Data {y: y2, N: 50, n: 25};
-            let prob = post_prob(delta, data1, data2, &prior1, &prior2);
-            println!("{:<7}{:<7}{:.5}", y1, y2, prob);
+            let prob = post_prob(delta, &data1, &data2, &prior1, &prior2);
+            let pred = pred_prob(target, &data1, &data2, &prior1, &prior2);
+            println!("{:<7}{:<7}{:<8.4}{:<8.4}", y1, y2, prob, pred);
         }
     }
 }
@@ -98,6 +100,12 @@ fn test_beta() {
     assert!((0.1158881575662717E-3_f64 - beta(5.1_f64, 9.4_f64)).abs() < 1.0E-9_f64);
 }
 
+fn nchoosek(n: u64, k: u64) -> u64 {
+    (log_gamma((n + 1) as f64) - log_gamma((k + 1) as f64) - log_gamma((n - k + 1) as f64))
+        .exp()              
+        .round() as u64
+}   
+
 struct PriorParams {
     alpha: f64,
     beta: f64,
@@ -113,7 +121,11 @@ fn beta_dens(x: f64, a: f64, b: f64) -> f64 {
     x.powf(a - 1.0) * (1.0 - x).powf(b - 1.0) / beta(a, b)
 }
 
-fn post_prob(delta: f64, data1: Data, data2: Data, prior1: &PriorParams, prior2: &PriorParams) -> f64 {
+fn betabin_dens(x: u64, n: u64, a: f64, b: f64) -> f64 {
+    (nchoosek(n, x) as f64) * beta((x as f64) + a, (n as f64) - (x as f64) + b) / beta(a, b)
+}
+
+fn post_prob(delta: f64, data1: &Data, data2: &Data, prior1: &PriorParams, prior2: &PriorParams) -> f64 {
     assert!(0.0_f64 < delta && delta < 1.0_f64);
     let inner: &dyn Fn(f64) -> f64 = &|p2| beta_dens(p2, prior2.alpha + (data2.y as f64), prior2.beta + (data2.n as f64) - (data2.y as f64));
     let outer: &dyn Fn(f64) -> f64 = &|p1| beta_dens(p1, prior1.alpha + (data1.y as f64), prior1.beta + (data1.n as f64) - (data1.y as f64)) *
@@ -121,4 +133,26 @@ fn post_prob(delta: f64, data1: Data, data2: Data, prior1: &PriorParams, prior2:
         .expect("inner integral failed to converge");
     trapezoid(outer, delta, 1.0, 1.0E-7, 1000)
         .expect("posterior probability failed to converge")
+}
+fn pred_prob(target: f64, data1: &Data, data2: &Data, prior1: &PriorParams, prior2: &PriorParams) -> f64 {
+    let mut sum = 0.0;
+    for x1 in 0..=(data1.N - data1.n) {
+        for x2 in 0..=(data2.N - data2.n) {
+            let inner_alpha: f64 = prior1.alpha + (data1.y as f64) + (x1 as f64);
+            let inner_beta: f64 = prior1.beta + (data1.N as f64) - (data1.y as f64) - (x1 as f64);
+            let inner: &dyn Fn(f64) -> f64 = &|p1| beta_dens(p1, inner_alpha, inner_beta);
+            let outer_alpha: f64 = prior2.alpha + (data2.y as f64) + (x2 as f64);
+            let outer_beta: f64 = prior2.beta + (data2.N as f64) - (data2.y as f64) - (x2 as f64);
+            let outer: &dyn Fn(f64) -> f64 = &|p2| beta_dens(p2, outer_alpha, outer_beta) *
+                trapezoid(inner, p2, 1.0, 1.0E-2, 1000)
+                .expect("inner integral failed to converge");
+            let prob = trapezoid(outer, 0.0, 1.0, 1.0E-3, 1000)
+                .expect("posterior probability failed to converge");
+            if prob >= target {
+                sum += betabin_dens(x1, data1.N - data1.n, prior1.alpha + (data1.y as f64), prior1.beta + (data1.n as f64) - (data1.y as f64)) *
+                    betabin_dens(x2, data2.N - data2.n, prior2.alpha + (data2.y as f64), prior2.beta + (data2.n as f64) - (data2.y as f64));
+            }
+        }
+    }
+    sum
 }
