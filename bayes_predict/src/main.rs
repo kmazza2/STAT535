@@ -1,11 +1,17 @@
 fn main() {
     let prior1 = PriorParams{alpha: 0.3, beta: 0.7};
     let prior2 = PriorParams{alpha: 0.3, beta: 0.7};
-    let data1 = Data {y: 5, n: 25};
-    let data2 = Data {y: 5, n: 25};
     let delta = 0.2;
-    let post_prob1 = post_prob(delta, data1, data2, prior1, prior2);
-    println!("Posterior probability: {post_prob1}");
+    println!("{:<7}{:<7}{:7}", "y1", "y2", "post");
+    println!("---------------------");
+    for y1 in 5..=15 {
+        for y2 in 5..=y1 {
+            let data1 = Data {y: y1, n: 25};
+            let data2 = Data {y: y2, n: 25};
+            let prob = post_prob(delta, data1, data2, &prior1, &prior2);
+            println!("{:<7}{:<7}{:.5}", y1, y2, prob);
+        }
+    }
 }
 
 // This will fail if the parameters of the beta distribution
@@ -112,7 +118,7 @@ fn beta_dens(x: f64, a: f64, b: f64) -> f64 {
     x.powf(a - 1.0) * (1.0 - x).powf(b - 1.0) / beta(a, b)
 }
 
-fn post_prob(delta: f64, data1: Data, data2: Data, prior1: PriorParams, prior2: PriorParams) -> f64 {
+fn post_prob(delta: f64, data1: Data, data2: Data, prior1: &PriorParams, prior2: &PriorParams) -> f64 {
     assert!(0.0_f64 < delta && delta < 1.0_f64);
     let inner: &dyn Fn(f64) -> f64 = &|p2| beta_dens(p2, prior2.alpha + (data2.y as f64), prior2.beta + (data2.n as f64) - (data2.y as f64));
     let outer: &dyn Fn(f64) -> f64 = &|p1| beta_dens(p1, prior1.alpha + (data1.y as f64), prior1.beta + (data1.n as f64) - (data1.y as f64)) *
