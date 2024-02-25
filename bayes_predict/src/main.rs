@@ -6,8 +6,8 @@ fn main() {
     println!("---------------------");
     for y1 in 5..=15 {
         for y2 in 5..=y1 {
-            let data1 = Data {y: y1, n: 25};
-            let data2 = Data {y: y2, n: 25};
+            let data1 = Data {y: y1, N: 50, n: 25};
+            let data2 = Data {y: y2, N: 50, n: 25};
             let prob = post_prob(delta, data1, data2, &prior1, &prior2);
             println!("{:<7}{:<7}{:.5}", y1, y2, prob);
         }
@@ -89,12 +89,6 @@ fn log_gamma(x: f64) -> f64 {
     tmp + (STP * ser / x).ln()
 }       
 
-fn nchoosek(n: usize, k: usize) -> usize {
-    (log_gamma((n + 1) as f64) - log_gamma((k + 1) as f64) - log_gamma((n - k + 1) as f64))
-        .exp()              
-        .round() as usize       
-}         
-
 fn beta(x1: f64, x2: f64) -> f64 {
     (log_gamma(x1) + log_gamma(x2) - log_gamma(x1 + x2)).exp()
 }
@@ -111,6 +105,7 @@ struct PriorParams {
 
 struct Data {
     y: u64,
+    N: u64,
     n: u64,
 }
 
