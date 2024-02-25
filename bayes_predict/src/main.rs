@@ -8,6 +8,8 @@ fn main() {
     println!("Posterior probability: {post_prob1}");
 }
 
+// This will fail if the parameters of the beta distribution
+// yield singularities at the endpoints of its support; beware!
 fn trapezoid(f: impl Fn(f64) -> f64, a: f64, b: f64, eps: f64, max_steps: u64) -> Result<f64, String> {
     assert!(b >= a);
     let mut old_val: f64 = 0.0;
