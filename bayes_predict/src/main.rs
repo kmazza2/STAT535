@@ -1,9 +1,15 @@
 fn main() {
-    println!("Hello, world!");
+    let prior1 = PriorParams{alpha: 0.3, beta: 0.7};
+    let prior2 = PriorParams{alpha: 0.3, beta: 0.7};
+    let data1 = Data {y: 5, n: 25};
+    let data2 = Data {y: 5, n: 25};
+    let delta = 0.2;
+    let post_prob1 = post_prob(delta, data1, data2, prior1, prior2);
+    println!("Posterior probability: {post_prob1}");
 }
 
-fn trapezoid(f: fn(f64) -> f64, a: f64, b: f64, eps: f64, max_steps: u64) -> Result<f64, String> {
-    assert!(b > a);
+fn trapezoid(f: impl Fn(f64) -> f64, a: f64, b: f64, eps: f64, max_steps: u64) -> Result<f64, String> {
+    assert!(b >= a);
     let mut old_val: f64 = 0.0;
     let mut val: f64 = 0.0;
     let mut converged: bool = false;
@@ -13,7 +19,7 @@ fn trapezoid(f: fn(f64) -> f64, a: f64, b: f64, eps: f64, max_steps: u64) -> Res
         } else {
             let num_points = 2_u64.pow((i - 2) as u32);
             let h = (b - a) / (num_points as f64);
-            val = 0.5 * (val + (b - a) * (0..num_points).map(|j| f(a + ((j as f64) + 0.5) * h)).sum::<f64>() / (num_points as f64))
+            val = 0.5 * (val + (b - a) * (0..num_points).map(|j| f(a + ((j as f64) + 0.5) * h)).sum::<f64>() / (num_points as f64));
         }
         if i > 5 &&
                 (
@@ -45,6 +51,14 @@ fn test_trapezoid() {
         Ok(val) => assert!((185.4563803458403 - val).abs() < 0.00001),
         Err(s) => panic!("{}", s)
     };
+    let inner: &dyn Fn(f64) -> f64 = &|x2| x2;
+    let outer: &dyn Fn(f64) -> f64 = &|x1| x1.cos() *
+        trapezoid(inner, 0.0, 2.0, 1.0E-5, 100)
+        .expect("inner integral failed to converge");
+    match trapezoid(outer, 9.0, 13.0, 1.0E-5, 100) {
+        Ok(val) => assert!((0.01609710316976865_f64 - val).abs() < 0.00001),
+        Err(s) => panic!("{}", s)
+    }
 }
 
 fn log_gamma(x: f64) -> f64 {
@@ -98,11 +112,10 @@ fn beta_dens(x: f64, a: f64, b: f64) -> f64 {
 
 fn post_prob(delta: f64, data1: Data, data2: Data, prior1: PriorParams, prior2: PriorParams) -> f64 {
     assert!(0.0_f64 < delta && delta < 1.0_f64);
-    let dens1: fn(f64) -> f64 = |x| beta_dens(x, prior1.alpha, prior1.beta);
-    let dens2: fn(f64) -> f64 = |x| beta_dens(x, prior2.alpha, prior2.beta);
-    let inner_integral: fn(f64) -> f64 =
-        |p1| trapezoid(dens2, 0.0_f64, p1 - delta, 1.0E-13_f64, 10_000)
-            .expect("inner integral failed to converge");
-    trapezoid(inner_integral, delta, 1.0_f64, 1.0E-13_f64, 10_000)
+    let inner: &dyn Fn(f64) -> f64 = &|p2| beta_dens(p2, prior2.alpha + (data2.y as f64), prior2.beta + (data2.n as f64) - (data2.y as f64));
+    let outer: &dyn Fn(f64) -> f64 = &|p1| beta_dens(p1, prior1.alpha + (data1.y as f64), prior1.beta + (data1.n as f64) - (data1.y as f64)) *
+        trapezoid(inner, 0.0, p1 - delta, 1.0, 100)
+        .expect("inner integral failed to converge");
+    trapezoid(outer, delta, 1.0, 1.0, 100)
         .expect("posterior probability failed to converge")
 }
