@@ -117,8 +117,8 @@ fn post_prob(delta: f64, data1: Data, data2: Data, prior1: &PriorParams, prior2:
     assert!(0.0_f64 < delta && delta < 1.0_f64);
     let inner: &dyn Fn(f64) -> f64 = &|p2| beta_dens(p2, prior2.alpha + (data2.y as f64), prior2.beta + (data2.n as f64) - (data2.y as f64));
     let outer: &dyn Fn(f64) -> f64 = &|p1| beta_dens(p1, prior1.alpha + (data1.y as f64), prior1.beta + (data1.n as f64) - (data1.y as f64)) *
-        trapezoid(inner, 0.0, p1 - delta, 1.0, 100)
+        trapezoid(inner, 0.0, p1 - delta, 1.0E-7, 1000)
         .expect("inner integral failed to converge");
-    trapezoid(outer, delta, 1.0, 1.0, 100)
+    trapezoid(outer, delta, 1.0, 1.0E-7, 1000)
         .expect("posterior probability failed to converge")
 }
